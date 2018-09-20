@@ -42,10 +42,19 @@ public class GlobalExceptionHandler {
 	
 	@ExceptionHandler(ActivationException.class)
 	public ResponseEntity<ResponseDTO> activationExceptionHandler(ActivationException e){
-		logger.error("User account activation exception exception");
+		logger.error("User account activation exception");
 		ResponseDTO response=new ResponseDTO();
 		response.setMessage("User account activation Exception, "+e.getMessage());
 		response.setStatus(1104);
+		return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(RestHighLevelClientException.class)
+	public ResponseEntity<ResponseDTO> restHighLevelClientExceptionHandler(RestHighLevelClientException e){
+		logger.error("Rest high level client exception");
+		ResponseDTO response=new ResponseDTO();
+		response.setMessage("Rest high level client exception, "+e.getMessage());
+		response.setStatus(1106);
 		return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
 	}
 	/*@ExceptionHandler(Exception.class)

@@ -1,5 +1,6 @@
 package com.bridgelabz.microservices.user.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -20,12 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bridgelabz.microservices.user.exception.ActivationException;
 import com.bridgelabz.microservices.user.exception.LoginException;
 import com.bridgelabz.microservices.user.exception.RegistrationException;
+import com.bridgelabz.microservices.user.exception.RestHighLevelClientException;
 import com.bridgelabz.microservices.user.exception.UserNotFoundException;
 import com.bridgelabz.microservices.user.model.LoginDTO;
 import com.bridgelabz.microservices.user.model.PasswordDTO;
 import com.bridgelabz.microservices.user.model.RegistrationDTO;
 import com.bridgelabz.microservices.user.model.ResponseDTO;
 import com.bridgelabz.microservices.user.model.User;
+import com.bridgelabz.microservices.user.services.UserDao;
 import com.bridgelabz.microservices.user.services.UserService;
 
 @RestController
@@ -34,6 +37,9 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
+	
+	@Autowired
+	private UserDao userDao;
 	
 	public static final Logger logger = LoggerFactory.getLogger(UserController.class);
 	
@@ -83,8 +89,9 @@ public class UserController {
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
 	public ResponseEntity<ResponseDTO> registerUser(@RequestBody RegistrationDTO user) throws RegistrationException {
 
-		userService.registerUser(user);
-
+		//userService.registerUser(user);
+          userDao.registerUser(user);
+		
 		ResponseDTO response = new ResponseDTO();
 		response.setMessage("User with email "+user.getEmail()+" registered successfully");
 		response.setStatus(1);
@@ -123,9 +130,10 @@ public class UserController {
      //--------------------------Login User-------------------------
 	
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
-	public ResponseEntity<ResponseDTO> loginUser(@RequestBody LoginDTO user,HttpServletResponse res) throws LoginException, UserNotFoundException, ActivationException {
+	public ResponseEntity<ResponseDTO> loginUser(@RequestBody LoginDTO user,HttpServletResponse res) throws LoginException, UserNotFoundException, ActivationException, IOException, RestHighLevelClientException {
 		
-        String token=userService.loginUser(user);
+       // String token=userService.loginUser(user);
+		String token=userDao.loginUser(user);
         res.setHeader("token",token);
         
 		ResponseDTO response = new ResponseDTO();
@@ -162,5 +170,18 @@ public class UserController {
 		response.setStatus(4);
 
 		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
+	
+	@RequestMapping(value = "/upload-profilepic", method = RequestMethod.POST)
+	public ResponseEntity<String> uploadPic(@RequestHeader(value = "token") String token,
+			@RequestParam(value = "pic") String pic) throws UserNotFoundException {
+		String profilePic = userService.uploadPic(token, pic);
+		return new ResponseEntity<>(profilePic, HttpStatus.OK);
+	}
+	
+	@RequestMapping(value="/remove-profilepic",method=RequestMethod.POST)
+	public ResponseEntity<String> removePic(@RequestParam(value="token")String token) throws UserNotFoundException{
+		String profilePic=userService.removePic(token);
+		return new ResponseEntity<>(profilePic,HttpStatus.OK);
 	}
 }

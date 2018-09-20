@@ -32,4 +32,8 @@ public interface UserService {
 
 	void activate(String token) throws UserNotFoundException;
 
+	public String uploadPic(String token, String pic) throws UserNotFoundException;
+
+	public String removePic(String token) throws UserNotFoundException;
+
 }

@@ -8,7 +8,7 @@ public class RegistrationDTO {
 	private String phoneNo;
 	private String password;
 	private String confirmPassword;
-
+    private String profilePic;
 	public RegistrationDTO() {
 
 	}
@@ -61,10 +61,19 @@ public class RegistrationDTO {
 		this.confirmPassword = confirmPassword;
 	}
 
+	public String getProfilePic() {
+		return profilePic;
+	}
+
+	public void setProfilePic(String profilePic) {
+		this.profilePic = profilePic;
+	}
+
 	@Override
 	public String toString() {
 		return "RegistrationDTO [email=" + email + ", firstname=" + firstname + ", lastname=" + lastname + ", phoneNo="
-				+ phoneNo + ", password=" + password + ", confirmPassword=" + confirmPassword + "]";
+				+ phoneNo + ", password=" + password + ", confirmPassword=" + confirmPassword + ", profilePic="
+				+ profilePic + "]";
 	}
 
 }

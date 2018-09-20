@@ -54,6 +54,9 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private RedisRepository redisRepository; 
 	
+	@Autowired
+	private AwsS3Service awsS3Service;
+	
 	@Override
 	public List<User> getAllUsers() {
 
@@ -78,11 +81,15 @@ public class UserServiceImpl implements UserService {
 		user.setLastname(dto.getLastname());
 		user.setPhoneNo(dto.getPhoneNo());
 		user.setPassword(passwordEncoder.encode(dto.getPassword()));
+		//user.setProfilePic(environment.getProperty("imageLinkForUser") + dto.getProfilePic());
+
+		//awsS3Service.uploadFile(environment.getProperty("bucketName"), environment.getProperty("folderNameForUser"), dto.getProfilePic());
+
 		userRepository.insert(user);
 		userElasticRepository.save(user);
 
 		String jwt = jwtToken.tokenGenerator(user.getId());
-		
+
 		jwtToken.parseJwtToken(jwt);
 
 		MailDTO mail = new MailDTO();
@@ -90,7 +97,7 @@ public class UserServiceImpl implements UserService {
 		mail.setSubject("Account activation mail");
 		mail.setText(environment.getProperty("accountActivationLink") + jwt);
 		producer.sender(mail);
-        //mailService.sendMail(mail);
+		// mailService.sendMail(mail);
 		return jwt;
 	}
 
@@ -244,5 +251,46 @@ public class UserServiceImpl implements UserService {
 		userElasticRepository.save(user.get());
 		redisRepository.delete(uuid);
 
+	}
+	
+	@Override
+	public String uploadPic(String token, String pic) throws UserNotFoundException {
+		Claims claims = Jwts.parser().setSigningKey(DatatypeConverter.parseBase64Binary(environment.getProperty("Key")))
+				.parseClaimsJws(token).getBody();
+
+		// Optional<User> user = userRepository.findById(claims.getSubject());
+		Optional<User> user = userElasticRepository.findById(claims.getSubject());
+
+        User mainUser=user.get();
+
+		if (!claims.getSubject().equals(mainUser.getId())) {
+			throw new UserNotFoundException(environment.getProperty("UserNotFoundException"));
+		}
+		
+		mainUser.setProfilePic(environment.getProperty("imageLinkForUser") + pic);
+		
+		awsS3Service.uploadFile(environment.getProperty("bucketName"), environment.getProperty("folderNameForUser"), pic);
+
+		userRepository.save(mainUser);
+		userElasticRepository.save(mainUser);
+		return pic;
+	}
+
+	@Override
+	public String removePic(String token) throws UserNotFoundException {
+		Claims claims = Jwts.parser().setSigningKey(DatatypeConverter.parseBase64Binary(environment.getProperty("Key")))
+				.parseClaimsJws(token).getBody();
+        Optional<User> user=userElasticRepository.findById(claims.getSubject());
+        
+        User mainUser=user.get();
+        if(!claims.getSubject().equals(mainUser.getId())) {
+        	throw new UserNotFoundException(environment.getProperty("UserNotFoundException"));
+        }
+        
+        mainUser.setProfilePic(null);
+
+        userRepository.save(mainUser);
+        userElasticRepository.save(mainUser);
+		return "1";
 	}
 }
